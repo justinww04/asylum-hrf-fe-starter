@@ -7,27 +7,50 @@ const AppContext = createContext({});
 
 /**
  * TODO: Ticket 2:
- * - Use axios to fetch the data
+ * - Use axios to fetch the data  
  * - Store the data
  * - Populate the graphs with the stored data
  */
 const useAppContextProvider = () => {
   const [graphData, setGraphData] = useState(testData);
   const [isDataLoading, setIsDataLoading] = useState(false);
-
+  const [error, setError] = useState(null);
   useLocalStorage({ graphData, setGraphData });
 
-  const getFiscalData = () => {
-    // TODO: Replace this with functionality to retrieve the data from the fiscalSummary endpoint
-    const fiscalDataRes = testData;
-    return fiscalDataRes;
+  
+  // TODO: Replace this with functionality to retrieve the data from the fiscalSummary endpoint
+  const getFiscalData = async () => {
+
+    try{
+      const response = await axios.get('https://hrf-asylum-be-b.herokuapp.com/cases/fiscalSummary')
+      return response.data
+    } catch (err){
+      console.error('Error fetching fiscal data:', error);
+      setError(error);
+      return null;
+    }
   };
+
+
+
+
 
   const getCitizenshipResults = async () => {
     // TODO: Replace this with functionality to retrieve the data from the citizenshipSummary endpoint
-    const citizenshipRes = testData.citizenshipResults;
-    return citizenshipRes;
+    
+        try {
+          const response = await axios.get('https://hrf-asylum-be-b.herokuapp.com/cases/citizenshipSummary')
+          return response.data
+        }catch(err) {
+          console.error('Error fetching fiscal data', err);
+          setError(err);
+          return null;
+        }
   };
+
+
+
+
 
   const updateQuery = async () => {
     setIsDataLoading(true);
@@ -35,7 +58,25 @@ const useAppContextProvider = () => {
 
   const fetchData = async () => {
     // TODO: fetch all the required data and set it to the graphData state
+    setIsDataLoading(true);
+    try {
+      const fiscalData = await getFiscalData();
+      const citizenshipData = await getCitizenshipResults();
+
+      if (fiscalData && citizenshipData.length > 0) {
+        setGraphData({
+          ...fiscalData, 
+          citizenshipResults: citizenshipData, 
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setIsDataLoading(false);
+    }
   };
+
+
 
   const clearQuery = () => {
     setGraphData({});
